@@ -9,6 +9,7 @@ from .preset import (
     GaugeFieldIldg,
     ElementalNpy,
     EigenvectorNpy,
+    EigenvectorBinary,
     Jpsi2gammaNpy,
 )
 from .generator import (

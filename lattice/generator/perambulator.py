@@ -63,17 +63,22 @@ class PerambulatorGenerator:  # TODO: Add parameters to do smearing before the i
         Lx, Ly, Lz, Lt = self.latt_info.size
         gx, gy, gz, gt = self.latt_info.grid_coord
         Ne = self.eigenvector.Ne
+        evecPath = self.eigenvector.evecPath
+        conf_id = self.eigenvector.conf_id
         self.gauge_field_smear = io.readQIOGauge(self.gauge_field.load(key).file)
 
-        eigenvector_data = self.eigenvector.load(key)
-        eigenvector_data_cb2 = np.zeros((Ne, Lt, Lz, Ly, Lx, Nc), "<c16")
-        for e in range(Ne):
-            for t in range(Lt):
-                eigenvector_data_cb2[e, t] = eigenvector_data[
-                    gt * Lt + t, e, gz * Lz : (gz + 1) * Lz, gy * Ly : (gy + 1) * Ly, gx * Lx : (gx + 1) * Lx
-                ]
+        # eigenvector_data = self.eigenvector.load(key)
+        eigenvector_data = np.zeros((Lt, Ne, Lz, Ly, Lx, Nc), "<c16")
+        # for e in range(Ne):
+        #     for t in range(Lt):
+        #         eigenvector_data_cb2[e, t] = eigenvector_data[
+        #             gt * Lt + t, e, gz * Lz : (gz + 1) * Lz, gy * Ly : (gy + 1) * Ly, gx * Lx : (gx + 1) * Lx
+        #         ]
+        for t in range(Lt):
+            eigenvector_data[t] = np.memmap("%seigvecs_t%03d_%s" % (evecPath, gt * Lt + t, conf_id),dtype="<c16",mode='r').reshape((Ne,Lz,Ly,Lx,Nc))[
+                :, gz * Lz : (gz + 1) * Lz, gy * Ly : (gy + 1) * Ly, gx * Lx : (gx + 1) * Lx]
         eigenvector_data_cb2 = backend.asarray(
-            core.cb2(eigenvector_data_cb2.reshape(Ne, Lt, Lz, Ly, Lx, Nc), [1, 2, 3, 4])
+            core.cb2(eigenvector_data.transpose(1, 0, 2, 3, 4, 5), [1, 2, 3, 4])
         )
         self._eigenvector_data = eigenvector_data_cb2
         set_backend(backend)
